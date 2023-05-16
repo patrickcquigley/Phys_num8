@@ -283,10 +283,8 @@ xmoy(vec_cmplx const& psi, const vector<double>& x, double const& dx)
     // TODO: calcul de la position moyenne de la particule <x>
     double resultat(0.);
 
-    for (int i(0); i < Npoints; ++i){
-
-    resultat+=dx*(psi[i]*x[i]*psi[i]+psi[i+1]*x[i+1]*psi[i+1])*0.5;
-
+    for (int i(0); i < psi.size(); ++i){
+    resultat+=real(dx*(conj(psi[i])*x[i]*psi[i]+conj(psi[i+1])*x[i+1]*psi[i+1])*0.5);
     }
 
     return resultat;
