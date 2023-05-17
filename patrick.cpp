@@ -106,7 +106,7 @@ main(int argc, char** argv)
          ++i) // Input complementaires ("./Exercice8 config_perso.in input_scan=[valeur]")
         configFile.process(argv[i]);
 
-    // Set verbosity level. Set to 0 to reduce printouts in console.
+    // Set verbosity level. Set to 0 to reduces in console.
     const int verbose = configFile.get<int>("verbose");
     configFile.setVerbosity(verbose);
 
