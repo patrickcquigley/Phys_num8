@@ -52,7 +52,7 @@ double vl;
 double vr;
 
 vl=0.5*m*pow(w1,2)*pow((x+delta),2);
-vr=0.5*m*pow(w1,2)*pow((x-delta),2);
+vr=0.5*m*pow(w2,2)*pow((x-delta),2);
 
 return min(vl,vr);
        
@@ -217,13 +217,14 @@ main(int argc, char** argv)
     double t = 0;
     
     //TODO: intersection des deux paraboles (x=x_c)
-    double x_local_max = 0; 
+    double x_local_max = -delta*(w1-w2)/(w1+w2); 
     
     // TODO: Nombre d'intervalles entre xL et x_local_max (x=x_c)
     unsigned int Nx0 = Nintervals*(x_local_max-xL)/(xR-xL);
     
     for (int nt = 0.; nt <= Nsteps; nt += 1) {
         // Ecriture de |psi|^2 and phase information
+        
         for (int i(0); i < Npoints; ++i){
             fichier_psi << pow(abs(psi[i]), 2) 
             		 << " " 
@@ -248,9 +249,25 @@ main(int argc, char** argv)
        if (nt < Nsteps) {
             // Calcul du membre de droite :
             vec_cmplx psi_tmp(Npoints, 0.);
+
+
+            for(int i(0);i<psi.size()-1;++i){
+
+            }
             // TODO: Programmer l'algorithme semi-implicite
-            psi = psi_tmp; // à modifier!
+             // à modifier!
+          psi_tmp[0]=dB[0]*psi[0]+aB[0]*psi[1];
+
+
+        for (int i(1); i < psi.size()-1;++i){
+            psi_tmp[i]=cB[i-1]*psi[i-1]+dB[i]*psi[i]+aB[i]*psi[i+1];
+        }
+        psi_tmp[psi.size()]=cB[psi.size()-1]*psi[psi.size()-1]+dB[psi.size()]*psi[psi.size()];
+      
+
             
+
+        triangular_solve(dA,aA,cA,psi_tmp,psi);
             t += dt;
         }
     } // Fin de la boucle temporelle
@@ -266,6 +283,7 @@ main(int argc, char** argv)
 double
 prob(vec_cmplx const& psi, int nL, int nR, double dx)
 {
+    //TODO2
     // TODO: calculer la probabilite de trouver la particule entre les points nL et nR
     double resultat(0.);
     return resultat;
@@ -281,12 +299,21 @@ E(vec_cmplx const& psi,
     // TODO: calcul de l’énergie de la particule, moyenne de l’Hamiltonien
     vec_cmplx psi_tmp(psi.size(), 0.);
     double resultat(0.);
+    //calculation of  H(psi)*psi
+    psi_tmp[0]=diagH[0]*psi[0]+upperH[0]*psi[1];
 
-    // TODO: calculer H(psi)*psi
+
+    for (int i(1); i < psi.size()-1;++i){
+        psi_tmp[i]=lowerH[i-1]*psi[i-1]+diagH[i]*psi[i]+upperH[i]*psi[i+1];
+    }
+    psi_tmp[psi.size()]=lowerH[psi.size()-1]*psi[psi.size()-1]+diagH[psi.size()]*psi[psi.size()];
     
     
     // TODO: calculer Integrale de conj(psi)* H(psi)*psi dx
     
+     for (int i(0); i<psi.size();i++){
+        resultat+=0.5*dx*real(conj(psi[i])*psi_tmp[i]+conj(psi[i+1])*psi_tmp[i+1]); //utilisation de la partie reel
+     }
     return resultat;
 }
 
@@ -296,7 +323,7 @@ xmoy(vec_cmplx const& psi, const vector<double>& x, double const& dx)
     // TODO: calcul de la position moyenne de la particule <x>
     double resultat(0.);
 
-    for (int i(0); i < psi.size(); ++i){
+    for (int i(0); i < psi.size()-1; ++i){
     resultat+=real(dx*(conj(psi[i])*x[i]*psi[i]+conj(psi[i+1])*x[i+1]*psi[i+1])*0.5);
     }
 
@@ -308,6 +335,9 @@ x2moy(vec_cmplx const& psi, const vector<double>& x, double const& dx)
 {
     // TODO: calcul de la x^2 moyenne de la particule <x^2>
     double resultat(0.);
+        for (int i(0); i < psi.size()-1; ++i){
+    resultat+=real(dx*(conj(psi[i])*pow(x[i],2)*psi[i]+conj(psi[i+1])*pow(x[i+1],2)*psi[i+1])*0.5);
+    }
     return resultat;
 }
 
@@ -316,6 +346,28 @@ pmoy(vec_cmplx const& psi, double const& dx, double const& hbar)
 {
     // TODO: calcul de la quantité de mouvement moyenne de la particule <p>
     double resultat(0.);
+    vec_cmplx p_psi(psi.size(),0.);
+    complex<double> complex_i = complex<double>(0, 1);
+   
+    for (int i(0); i < psi.size(); ++i){
+        
+        if (i==0){
+            p_psi[i]=-complex_i*hbar*(psi[i+2]-psi[i])/(2*dx);
+        }
+        else if (i==psi.size()){
+            p_psi[i]=-complex_i*hbar*(psi[i]-psi[i-2])/(2*dx);
+        }
+        else{
+            p_psi[i]=-complex_i*hbar*(psi[i+1]-psi[i-1])/(2*dx);
+        }
+    }
+
+
+    for (int i(0); i < psi.size()-1; ++i){ 
+
+    resultat+=real(dx*(conj(psi[i])*p_psi[i]+conj(psi[i+1])*p_psi[i+1])*0.5);
+
+    }
     return resultat;
 }
 
@@ -324,6 +376,21 @@ p2moy(vec_cmplx const& psi, double const& dx, double const& hbar)
 {
     // TODO: calcul de la p^2 moyenne de la particule <p^2>
     double resultat(0.);
+    vec_cmplx p_psi_squ(psi.size(),0.);
+    complex<double> complex_i = complex<double>(0, 1);
+    complex<double> two=complex<double>(2, 0);
+   
+   p_psi_squ[0]=0;
+   p_psi_squ[psi.size()]=0;
+
+    for (int i(1); i < psi.size()-1; ++i){
+            p_psi_squ[i]=-hbar*(psi[i+1]-two*psi[i]+psi[i-1])/(pow(dx,2));
+        }
+
+    for (int i(0); i < psi.size()-1; ++i){
+    resultat+=real(dx*(conj(psi[i])*p_psi_squ[i]+conj(psi[i+1])*p_psi_squ[+1])*0.5);
+    }
+
     return resultat;
 }
 
@@ -331,6 +398,21 @@ vec_cmplx
 normalize(vec_cmplx const& psi, double const& dx)
 {
     // TODO: Normalisation de la fonction d'onde initiale psi
-    vec_cmplx psi_norm(psi.size(), 0.);
+   vec_cmplx psi_norm(psi.size(), 0.);
+    double C(0.);
+    double integral(0.);
+
+    for (int i(0); i < psi.size()-1; ++i){
+    integral+=real(dx*(conj(psi[i])*psi[i]+conj(psi[i+1])*psi[i+1])*0.5);
+    }
+
+    C=1/integral;
+
+    for (int i(0); i < psi.size(); ++i){
+    
+    psi_norm[i]=C*psi[i];
+    
+    }
+
     return psi_norm;
 }
