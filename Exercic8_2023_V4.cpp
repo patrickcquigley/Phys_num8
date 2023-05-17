@@ -135,7 +135,7 @@ main(int argc, char** argv)
     vector<double> x(Npoints);
     for (int i(0); i < Npoints; ++i)
         
-        x[i] =xL+i*(xR-xL)/Npoints;
+        x[i] =xL+i*(xR-xL)/Nintervals;
 
     // Initialisation de la fonction d'onde :
     vec_cmplx psi(Npoints);
@@ -144,8 +144,9 @@ main(int argc, char** argv)
         double x0 = configFile.get<double>("x0");
         double k0 = n*2*M_PI/(xR-xL); //à modifier par l'élève
         double sigma0 = configFile.get<double>("sigma_norm") * (xR - xL);
+
         for (int i(0); i < Npoints; ++i)
-            psi[i] = exp(i*k0*x[i])*exp(-((x[i]-x0)*(x[i]-x0))/(2*pow(sigma0,2)));
+            psi[i] = exp(complex_i*k0*x[i])*exp(-((x[i]-x0)*(x[i]-x0))/(2*pow(sigma0,2)));
         // Modifications des valeurs aux bords :
         psi[0] = complex<double>(0., 0.);
         psi[Npoints - 1] = complex<double>(0., 0.);
@@ -415,7 +416,7 @@ normalize(vec_cmplx const& psi, double const& dx)
     integral+=real(dx*(conj(psi[i])*psi[i]+conj(psi[i+1])*psi[i+1])*0.5);
     }
 
-    C=1/integral;
+    C=1/sqrt(integral);
 
     for (int i(0); i < psi.size(); ++i){
     
