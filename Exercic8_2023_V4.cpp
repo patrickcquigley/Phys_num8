@@ -219,7 +219,7 @@ main(int argc, char** argv)
     
     //TODO: intersection des deux paraboles (x=x_c)
     double x_local_max = -delta*(w1-w2)/(w1+w2); 
-    
+    cout << x_local_max << endl;
     // TODO: Nombre d'intervalles entre xL et x_local_max (x=x_c)
     unsigned int Nx0 = Nintervals*(x_local_max-xL)/(xR-xL);
     
@@ -289,8 +289,9 @@ prob(vec_cmplx const& psi, int nL, int nR, double dx)
     double resultat(0.);
     double integral(0.);
 
-    for (int i(0); i < psi.size()-1; ++i){
-    if((dx*i)>=nL){    
+
+    for (int i(0); i < psi.size(); ++i){  
+    if (i>=nL && i<nR){
      resultat+=real(dx*(conj(psi[i])*psi[i]+conj(psi[i+1])*psi[i+1])*0.5);
     }
     }
@@ -333,7 +334,7 @@ xmoy(vec_cmplx const& psi, const vector<double>& x, double const& dx)
     // TODO: calcul de la position moyenne de la particule <x>
     double resultat(0.);
 
-    for (int i(0); i < psi.size()-1; ++i){
+    for (int i(0); i < psi.size(); ++i){
     resultat+=real(dx*(conj(psi[i])*x[i]*psi[i]+conj(psi[i+1])*x[i+1]*psi[i+1])*0.5);
     }
 
@@ -346,7 +347,7 @@ x2moy(vec_cmplx const& psi, const vector<double>& x, double const& dx)
     // TODO: calcul de la x^2 moyenne de la particule <x^2>
     double resultat(0.);
         for (int i(0); i < psi.size()-1; ++i){
-    resultat+=real(dx*(conj(psi[i])*pow(x[i],2)*psi[i]+conj(psi[i+1])*pow(x[i+1],2)*psi[i+1])*0.5);
+    resultat+=real(dx*(conj(psi[i])*x[i]*x[i]*psi[i]+conj(psi[i+1])*x[i+1]*x[i+1]*psi[i+1])*0.5);
     }
     return resultat;
 }
@@ -359,7 +360,7 @@ pmoy(vec_cmplx const& psi, double const& dx, double const& hbar)
     vec_cmplx p_psi(psi.size(),0.);
     complex<double> complex_i = complex<double>(0, 1);
    
-    for (int i(0); i < psi.size(); ++i){
+    for (int i(0); i <= psi.size(); ++i){
         
         if (i==0){
             p_psi[i]=-complex_i*hbar*(psi[i+2]-psi[i])/(2*dx);
@@ -370,10 +371,12 @@ pmoy(vec_cmplx const& psi, double const& dx, double const& hbar)
         else{
             p_psi[i]=-complex_i*hbar*(psi[i+1]-psi[i-1])/(2*dx);
         }
+        cout << p_psi[i] << endl;
     }
+    
 
 
-    for (int i(0); i < psi.size()-1; ++i){ 
+    for (int i(0); i < psi.size(); ++i){ 
 
     resultat+=real(dx*(conj(psi[i])*p_psi[i]+conj(psi[i+1])*p_psi[i+1])*0.5);
 
@@ -393,11 +396,11 @@ p2moy(vec_cmplx const& psi, double const& dx, double const& hbar)
    p_psi_squ[0]=0;
    p_psi_squ[psi.size()]=0;
 
-    for (int i(1); i < psi.size()-1; ++i){
-            p_psi_squ[i]=-hbar*(psi[i+1]-two*psi[i]+psi[i-1])/(pow(dx,2));
+    for (int i(1); i < psi.size(); ++i){
+            p_psi_squ[i] = -hbar*hbar*(psi[i+1]-two*psi[i]+psi[i-1])/(pow(dx,2));
         }
 
-    for (int i(0); i < psi.size()-1; ++i){
+    for (int i(0); i < psi.size(); ++i){
     resultat+=real(dx*(conj(psi[i])*p_psi_squ[i]+conj(psi[i+1])*p_psi_squ[+1])*0.5);
     }
 
