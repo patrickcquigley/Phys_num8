@@ -9,7 +9,7 @@
 #include <vector>
 
 using namespace std;
-typedef vector<complex<double> > vec_cmplx;
+typedef vector<complex<double>> vec_cmplx;
 
 // Fonction resolvant le systeme d'equations A * solution = rhs
 // où A est une matrice tridiagonale
@@ -45,19 +45,15 @@ triangular_solve(vector<T> const& diag,
 // Potentiel V(x) :
 double
 V(double const& x, double const& m, double const& delta, double const& w1, double const& w2)
-
 {
-// TODO: Initialiser le potentiel  
-double vl;
+// TODO: Initialiser le potentiel   
+        double vl;
 double vr;
 
 vl=0.5*m*pow(w1,2)*pow((x+delta),2);
 vr=0.5*m*pow(w2,2)*pow((x-delta),2);
 
 return min(vl,vr);
-       
-
-
 }
 
 // Declaration des diagnostiques de la particule d'apres sa fonction d'onde psi :
@@ -106,7 +102,7 @@ main(int argc, char** argv)
          ++i) // Input complementaires ("./Exercice8 config_perso.in input_scan=[valeur]")
         configFile.process(argv[i]);
 
-    // Set verbosity level. Set to 0 to reduces in console.
+    // Set verbosity level. Set to 0 to reduce printouts in console.
     const int verbose = configFile.get<int>("verbose");
     configFile.setVerbosity(verbose);
 
@@ -132,10 +128,11 @@ main(int argc, char** argv)
     const auto simulationStart = std::chrono::steady_clock::now();
 
     // Maillage :
-    vector<double> x(Npoints);
+         vector<double> x(Npoints);
     for (int i(0); i < Npoints; ++i)
         
-        x[i] =xL+i*(xR-xL)/Npoints;
+        x[i] =xL+i*(xR-xL)/Nintervals;
+
 
     // Initialisation de la fonction d'onde :
     vec_cmplx psi(Npoints);
@@ -145,7 +142,7 @@ main(int argc, char** argv)
         double k0 = n*2*M_PI/(xR-xL); //à modifier par l'élève
         double sigma0 = configFile.get<double>("sigma_norm") * (xR - xL);
         for (int i(0); i < Npoints; ++i)
-            psi[i] = exp(i*k0*x[i])*exp(-((x[i]-x0)*(x[i]-x0))/(2*pow(sigma0,2)));
+            psi[i] = exp(complex_i*k0*x[i])*exp(-((x[i]-x0)*(x[i]-x0))/(2*pow(sigma0,2)));
         // Modifications des valeurs aux bords :
         psi[0] = complex<double>(0., 0.);
         psi[Npoints - 1] = complex<double>(0., 0.);
@@ -159,9 +156,11 @@ main(int argc, char** argv)
     vec_cmplx dB(Npoints), aB(Nintervals),
       cB(Nintervals); // matrice du membre de droite de l'equation (4.100)
 
- complex<double> a = hbar * dt /(4*m*dx*dx) * complex_i; // Coefficient complexe a de l'equation (4.100), à modifier par l'élève
+        complex<double> a = hbar * dt /(4.0*m*dx*dx) * complex_i; // Coefficient complexe a de l'equation (4.100), à modifier par l'élève
     
-    for (int i(0); i < Npoints; ++i) // Boucle sur les points de maillage
+    
+
+   for (int i(0); i < Npoints; ++i) // Boucle sur les points de maillage
     {
         complex<double> b = 0.5*complex_i * dt  * V(x[i],m,delta,w1,w2) /hbar; // Coefficient complexe b de l'equation (4.100), à modifier par l'élève
 	// TODO: éléments de matrices diagonales
@@ -170,15 +169,15 @@ main(int argc, char** argv)
         dA[i] = 1.0+2.0*a+b;
         dB[i] = 1.0-2.0*a-b;
     }
-    for (int i(0); i < Nintervals; ++i) // Boucle sur les intervalles
+      for (int i(0); i < Nintervals; ++i) // Boucle sur les intervalles
     {
 	// TOTO: éléments de matrices sous- et sur- diagonales
-    aH[i] = -hbar*hbar/(2.0*dx*dx*m);
-    cH[i] = -hbar*hbar/(2.0*dx*dx*m);
-    aA[i] = -a;
-    cA[i] = -a;
-    aB[i] = a;
-    cB[i] = a;
+        aH[i] = -hbar*hbar/(2.0*dx*dx*m);
+        cH[i] = -hbar*hbar/(2.0*dx*dx*m);
+        aA[i] = -a;
+        cA[i] = -a;
+        aB[i] = a;
+        cB[i] = a;
     }
 
     // Conditions aux limites: psi nulle aux deux bords
@@ -189,16 +188,14 @@ main(int argc, char** argv)
     cB[0] = 0;
     dA[0] = 1;
     dB[0] = 1;
-
-    dA[Npoints] = 1;
-    dB[Npoints] = 1;
-    aA[Nintervals] = 0;
-    cA[Nintervals] = 0;
-    aB[Nintervals] = 0;
-    cB[Nintervals] = 0;
     
-
-    // Fichiers de sortie :
+dA[Npoints-1] = 1;
+    dB[Npoints-1] = 1;
+    aA[Nintervals-1] = 0;
+    cA[Nintervals-1] = 0;
+    aB[Nintervals-1] = 0;
+    cB[Nintervals-1] = 0;
+   // Fichiers de sortie :
     string output = configFile.get<string>("output");
 
     ofstream fichier_potentiel((output + "_pot.out").c_str());
@@ -221,10 +218,9 @@ main(int argc, char** argv)
     
     // TODO: Nombre d'intervalles entre xL et x_local_max (x=x_c)
     unsigned int Nx0 = Nintervals*(x_local_max-xL)/(xR-xL);
-    
+  
     for (int nt = 0.; nt <= Nsteps; nt += 1) {
         // Ecriture de |psi|^2 and phase information
-        
         for (int i(0); i < Npoints; ++i){
             fichier_psi << pow(abs(psi[i]), 2) 
             		 << " " 
@@ -249,26 +245,21 @@ main(int argc, char** argv)
        if (nt < Nsteps) {
             // Calcul du membre de droite :
             vec_cmplx psi_tmp(Npoints, 0.);
-
-
-            for(int i(0);i<psi.size()-1;++i){
-
-            }
             // TODO: Programmer l'algorithme semi-implicite
-             // à modifier!
-          psi_tmp[0]=dB[0]*psi[0]+aB[0]*psi[1];
+                     psi_tmp[0]=dB[0]*psi[0]+aB[0]*psi[1];
 
 
         for (int i(1); i < psi.size()-1;++i){
             psi_tmp[i]=cB[i-1]*psi[i-1]+dB[i]*psi[i]+aB[i]*psi[i+1];
         }
-        psi_tmp[psi.size()]=cB[psi.size()-1]*psi[psi.size()-1]+dB[psi.size()]*psi[psi.size()];
+        psi_tmp[psi.size()-1]=cB[psi.size()-1]*psi[psi.size()-1]+dB[psi.size()-1]*psi[psi.size()-1];
       
 
             
 
         triangular_solve(dA,aA,cA,psi_tmp,psi);
             t += dt;
+ 
         }
     } // Fin de la boucle temporelle
     fichier_observables.close();
@@ -283,9 +274,18 @@ main(int argc, char** argv)
 double
 prob(vec_cmplx const& psi, int nL, int nR, double dx)
 {
-    //TODO2
     // TODO: calculer la probabilite de trouver la particule entre les points nL et nR
-    double resultat(0.);
+     double resultat(0.);
+    double integral(0.);
+
+
+    for (int i(0); i < psi.size()-1; ++i){  //a changer
+    if (i>=nL && i<nR){
+     resultat+=real(dx*(conj(psi[i])*psi[i]+conj(psi[i+1])*psi[i+1])*0.5);
+    }
+    }
+
+
     return resultat;
 }
 
@@ -306,22 +306,21 @@ E(vec_cmplx const& psi,
     for (int i(1); i < psi.size()-1;++i){
         psi_tmp[i]=lowerH[i-1]*psi[i-1]+diagH[i]*psi[i]+upperH[i]*psi[i+1];
     }
-    psi_tmp[psi.size()]=lowerH[psi.size()-1]*psi[psi.size()-1]+diagH[psi.size()]*psi[psi.size()];
+    psi_tmp[psi.size()-1]=lowerH[psi.size()-1]*psi[psi.size()-1]+diagH[psi.size()-1]*psi[psi.size()-1];
     
     
     // TODO: calculer Integrale de conj(psi)* H(psi)*psi dx
     
-     for (int i(0); i<psi.size();i++){
+     for (int i(0); i<psi.size()-1;i++){
         resultat+=0.5*dx*real(conj(psi[i])*psi_tmp[i]+conj(psi[i+1])*psi_tmp[i+1]); //utilisation de la partie reel
      }
     return resultat;
-}
+    }
 
 double
 xmoy(vec_cmplx const& psi, const vector<double>& x, double const& dx)
 {
-    // TODO: calcul de la position moyenne de la particule <x>
-    double resultat(0.);
+   double resultat(0.);
 
     for (int i(0); i < psi.size()-1; ++i){
     resultat+=real(dx*(conj(psi[i])*x[i]*psi[i]+conj(psi[i+1])*x[i+1]*psi[i+1])*0.5);
@@ -336,7 +335,7 @@ x2moy(vec_cmplx const& psi, const vector<double>& x, double const& dx)
     // TODO: calcul de la x^2 moyenne de la particule <x^2>
     double resultat(0.);
         for (int i(0); i < psi.size()-1; ++i){
-    resultat+=real(dx*(conj(psi[i])*pow(x[i],2)*psi[i]+conj(psi[i+1])*pow(x[i+1],2)*psi[i+1])*0.5);
+    resultat+=real(dx*(conj(psi[i])*x[i]*x[i]*psi[i]+conj(psi[i+1])*x[i+1]*x[i+1]*psi[i+1])*0.5);
     }
     return resultat;
 }
@@ -344,7 +343,7 @@ x2moy(vec_cmplx const& psi, const vector<double>& x, double const& dx)
 double
 pmoy(vec_cmplx const& psi, double const& dx, double const& hbar)
 {
-    // TODO: calcul de la quantité de mouvement moyenne de la particule <p>
+       // TODO: calcul de la quantité de mouvement moyenne de la particule <p>
     double resultat(0.);
     vec_cmplx p_psi(psi.size(),0.);
     complex<double> complex_i = complex<double>(0, 1);
@@ -354,16 +353,17 @@ pmoy(vec_cmplx const& psi, double const& dx, double const& hbar)
         if (i==0){
             p_psi[i]=-complex_i*hbar*(psi[i+2]-psi[i])/(2*dx);
         }
-        else if (i==psi.size()){
+        else if (i==psi.size()-1){
             p_psi[i]=-complex_i*hbar*(psi[i]-psi[i-2])/(2*dx);
         }
         else{
             p_psi[i]=-complex_i*hbar*(psi[i+1]-psi[i-1])/(2*dx);
         }
-    }
+    } // a changer: peut etre source d'errreur car que des 0 + je sais pas pq les vecteurs complex a deux colonne
+    
 
 
-    for (int i(0); i < psi.size()-1; ++i){ 
+    for (int i(0); i < psi.size()-1; ++i){ // a changer: l'impression qu'il manque un truc 
 
     resultat+=real(dx*(conj(psi[i])*p_psi[i]+conj(psi[i+1])*p_psi[i+1])*0.5);
 
@@ -374,21 +374,20 @@ pmoy(vec_cmplx const& psi, double const& dx, double const& hbar)
 double
 p2moy(vec_cmplx const& psi, double const& dx, double const& hbar)
 {
-    // TODO: calcul de la p^2 moyenne de la particule <p^2>
-    double resultat(0.);
+     double resultat(0.);
     vec_cmplx p_psi_squ(psi.size(),0.);
     complex<double> complex_i = complex<double>(0, 1);
     complex<double> two=complex<double>(2, 0);
    
    p_psi_squ[0]=0;
-   p_psi_squ[psi.size()]=0;
+   p_psi_squ[psi.size()-1]=0; //a changer
 
     for (int i(1); i < psi.size()-1; ++i){
-            p_psi_squ[i]=-hbar*(psi[i+1]-two*psi[i]+psi[i-1])/(pow(dx,2));
+            p_psi_squ[i] = -hbar*hbar*(psi[i+1]-two*psi[i]+psi[i-1])/(pow(dx,2));
         }
 
     for (int i(0); i < psi.size()-1; ++i){
-    resultat+=real(dx*(conj(psi[i])*p_psi_squ[i]+conj(psi[i+1])*p_psi_squ[+1])*0.5);
+    resultat+=real(dx*(conj(psi[i])*p_psi_squ[i]+conj(psi[i+1])*p_psi_squ[i+1])*0.5);
     }
 
     return resultat;
@@ -406,7 +405,7 @@ normalize(vec_cmplx const& psi, double const& dx)
     integral+=real(dx*(conj(psi[i])*psi[i]+conj(psi[i+1])*psi[i+1])*0.5);
     }
 
-    C=1/integral;
+    C=1/sqrt(integral);
 
     for (int i(0); i < psi.size(); ++i){
     
