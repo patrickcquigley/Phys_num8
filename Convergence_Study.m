@@ -1,7 +1,6 @@
 %% Convergence Study 
 % script to perform the convergence study for Exercise 8 - by varying nstep
 
-
 % params 
 
 tfin=1000;

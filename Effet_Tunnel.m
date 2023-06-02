@@ -141,7 +141,7 @@ for ii= 1:nsimul
         box on
         xlabel('t')
         ylabel('Probability')
-        legend('P_{x<x_c}','P_{x>=x_c}','P_{tot}')
+        legend('P_{x<x_c}','P_{x>x_c}','P_{tot}')
         set(gca,'fontsize',15)
 
         figure
